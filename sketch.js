@@ -1,11 +1,11 @@
+//v1
+
 let bg;
 let sticks = [];
 let bokehOrbs = [];
 let mouseTrails = [];
 
-let song;
-let fft;
-
+let speaker;
 let isStopped = true;
 let lastTrigger = 0;
 
@@ -14,27 +14,16 @@ const DESIGN_H = 886;
 
 function preload() {
   bg = loadImage("bg_f.png");
-  song = loadSound("talkin.mp3");
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   imageMode(CORNER);
-
-  song.setVolume(1);
-
-  fft = new p5.FFT();
-  fft.setInput(song);
-
   generateArtwork();
 }
 
 function draw() {
   background(255);
-
-  if (!isStopped) {
-    fft.analyze();
-  }
 
   const scaleValue = min(width / DESIGN_W, height / DESIGN_H);
   const drawW = DESIGN_W * scaleValue;
@@ -89,13 +78,10 @@ function generateMagicDust() {
 function drawMagicDust() {
   noStroke();
 
-  let treble = !isStopped ? fft.getEnergy("treble") : 0;
-  let trebleBoost = map(treble, 0, 255, 1, 1.5);
-
   for (let s of sticks) {
     let pulse = 1;
     if (!isStopped) {
-      pulse = (1 + sin(frameCount * s.speed + s.phase) * 0.25) * trebleBoost;
+      pulse = 1 + sin(frameCount * s.speed + s.phase) * 0.25;
     }
 
     fill(s.color[0], s.color[1], s.color[2], 140);
@@ -132,15 +118,12 @@ function drawBokehOrbs() {
   let mX = (mouseX - offsetX) / scaleValue;
   let mY = (mouseY - offsetY) / scaleValue;
 
-  let bass = !isStopped ? fft.getEnergy("bass") : 0;
-  let bassFactor = map(bass, 0, 255, 1.0, 1.4);
-
   for (let b of bokehOrbs) {
     let currentScale = 1;
 
     if (!isStopped) {
       let wave = (sin(frameCount * b.pulseSpeed + b.phase) + 1) / 2;
-      currentScale = lerp(b.minScale, b.maxScale, wave) * bassFactor;
+      currentScale = lerp(b.minScale, b.maxScale, wave);
     }
 
     let d = dist(b.x, b.y, mX, mY);
@@ -203,22 +186,34 @@ function drawMouseTrails() {
   }
 }
 
+function speakerAudio() {
+  if (!speaker) {
+    speaker = new Audio("talkin.mp3");
+    speaker.setAttribute("playsinline", "");
+    speaker.preload = "auto";
+  }
+  return speaker;
+}
+
 function triggerSound() {
   if (millis() - lastTrigger < 400) return;
   lastTrigger = millis();
 
-  if (!isStopped) {
-    isStopped = true;
+  const audio = speakerAudio();
 
-    if (song.isPlaying()) {
-      song.stop();
-    }
+  if (!audio.paused) {
+    audio.pause();
+    audio.currentTime = 0;
+    isStopped = true;
   } else {
     generateArtwork();
     isStopped = false;
-    userStartAudio();
-    getAudioContext().resume();
-    song.play();
+    const played = audio.play();
+    if (played) {
+      played.catch(() => {
+        isStopped = true;
+      });
+    }
   }
 }
 
@@ -236,7 +231,6 @@ document.addEventListener("touchstart", (event) => {
   triggerSound();
   event.preventDefault();
 }, { passive: false });
-
 
 window.addEventListener("message", (event) => {
   if (event.data === "triggerSound") {
