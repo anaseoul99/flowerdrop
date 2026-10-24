@@ -232,6 +232,12 @@ function touchStarted() {
   return false;
 }
 
+document.addEventListener("touchstart", (event) => {
+  triggerSound();
+  event.preventDefault();
+}, { passive: false });
+
+
 window.addEventListener("message", (event) => {
   if (event.data === "triggerSound") {
     triggerSound();
