@@ -1,5 +1,3 @@
-//vvvv1
-
 let bg;
 let sticks = [];
 let bokehOrbs = [];
@@ -219,7 +217,7 @@ function triggerSound() {
     generateArtwork();
     isStopped = false;
     userStartAudio();
-    song.stop();
+    getAudioContext().resume();
     song.play();
   }
 }
