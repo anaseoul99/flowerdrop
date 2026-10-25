@@ -20,6 +20,11 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   imageMode(CORNER);
   generateArtwork();
+  const audio = speakerAudio();
+  audio.onended = () => {
+    isStopped = true;
+  };
+  startMusic();
 }
 
 function draw() {
@@ -40,6 +45,7 @@ function draw() {
   drawBokehOrbs();
   drawMouseTrails();
   pop();
+  drawSoundMark();
 }
 
 function generateArtwork() {
@@ -193,6 +199,34 @@ function speakerAudio() {
     speaker.preload = "auto";
   }
   return speaker;
+}
+
+function startMusic() {
+  const audio = speakerAudio();
+  if (!audio.paused) return;
+  isStopped = false;
+  const played = audio.play();
+  if (played) {
+    played.catch(() => {
+      isStopped = true;
+    });
+  }
+}
+
+function drawSoundMark() {
+  const on = !isStopped;
+  const label = on ? "음악 나옴" : "음악";
+  textFont("Apple SD Gothic Neo, sans-serif");
+  textSize(14);
+  textAlign(RIGHT, CENTER);
+  const tw = textWidth(label);
+  const x = width - 16;
+  const y = 22;
+  noStroke();
+  fill(on ? "#e21878" : 150);
+  circle(x - tw - 12, y, 8);
+  fill(on ? "#e21878" : 90);
+  text(label, x, y);
 }
 
 function triggerSound() {
